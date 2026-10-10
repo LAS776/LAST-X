@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MarkDown Lite - Markdown Previewer</title>
+    <style>
+        :root {
+            --bg-color: #ffffff;
+            --text-color: #333333;
+            --border-color: #e0e0e0;
+            --editor-bg: #f9f9f9;
+            --accent-color: #007bff;
+            --code-bg: #f4f4f4;
+            --shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        body.dark-mode {
+            --bg-color: #1e1e1e;
+            --text-color: #f0f0f0;
+            --border-color: #333333;
+            --editor-bg: #252525;
+            --accent-color: #4dabf7;
+            --code-bg: #2d2d2d;
+            --shadow: 0 2px 10px rgba(0,0,0,0.5);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            margin: 0;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+        }
+
+        button {
+            background-color: var(--editor-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: background-color 0.2s;
+        }
+
+        button:hover {
+            background-color: var(--accent-color);
+            color: white;
+            border-color: var(--accent-color);
+        }
+
+        .editor-wrapper {
+            display: flex;
+            gap: 20px;
+            flex-grow: 1;
+            min-height: 0; /* Allows flex children to shrink */
+        }
+
+        .pane {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background-color: var(--bg-color);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
+
+        .pane-header {
+            padding: 10px 15px;
+            background-color: var(--editor-bg);
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-color);
+            opacity: 0.7;
+        }
+
+        #editor {
+            width: 100%;
+            height: 100%;
+            padding: 15px;
+            border: none;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 1rem;
+            line-height: 1.5;
+            resize: none;
+            outline: none;
+        }
+
+        #preview {
+            padding: 20px;
+            overflow-y: auto;
+            height: 100%;
+            line-height: 1.6;
+        }
+
+        /* Markdown Styles */
+        #preview h1, #preview h2, #preview h3 {
+            margin-top: 20px;
+            margin-bottom: 10px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 5px;
+        }
+        #preview h1 { font-size: 1.8rem; }
+        #preview h2 { font-size: 1.5rem; }
+        #preview h3 { font-size: 1.3rem; }
+        
+        #preview p { margin: 10px 0; }
+        #preview code {
+            background-color: var(--code-bg);
+            padding: 2px 5px;
+            border-radius: 4px;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+        #preview pre {
+            background-color: var(--code-bg);
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+        }
+        #preview pre code {
+            background-color: transparent;
+            padding: 0;
+        }
+        #preview blockquote {
+            border-left: 4px solid var(--accent-color);
+            margin: 15px 0;
+            padding: 5px 15px;
+            color: var(--text-color);
+            background-color: var(--editor-bg);
+        }
+        #preview ul, #preview ol {
+            padding-left: 20px;
+        }
+        #preview img {
+            max-width: 100%;
+            border-radius: 8px;
+        }
+        #preview a {
+            color: var(--accent-color);
+            text-decoration: none;
+        }
+        #preview a:hover {
+            text-decoration: underline;
+        }
+        #preview hr {
+            border: none;
+            border-top: 1px solid var(--border-color);
+            margin: 20px 0;
+        }
+
+        /* Mobile Responsiveness */
+        @media (max-width: 768px) {
+            .editor-wrapper {
+                flex-direction: column;
+                height: auto;
+            }
+            .pane {
+                height: 40vh;
+                min-height: 200px;
+            }
+            .container {
+                height: auto;
+                min-height: 100vh;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>MarkDown Lite</h1>
+            <div class="controls">
+                <button id="themeToggle">Toggle Theme</button>
+                <button id="clearBtn">Clear</button>
+            </div>
+        </header>
+
+        <div class="editor-wrapper">
+            <div class="pane">
+                <div class="pane-header">Input (Markdown)</div>
+                <textarea id="editor" placeholder="Type your Markdown here..."># Welcome to MarkDown Lite
+
+This is a **live preview** tool.
+
+## Features
+- *Italic text*
+- **Bold text**
+- `Inline code`
+- [Links](https://example.com)
+
+> Blockquotes look like this.
+</textarea>
+            </div>
+
+            <div class="pane">
+                <div class="pane-header">Output (HTML)</div>
+                <div id="preview"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const editor = document.getElementById('editor');
+        const preview = document.getElementById('preview');
+        const themeToggle = document.getElementById('themeToggle');
+        const clearBtn = document.getElementById('clearBtn');
+
+        // Simple Markdown to HTML Converter
+        function markdownToHtml(text) {
+            if (!text) return '';
+            
+            // 1. Escape HTML tags to prevent injection
+            let html = text
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
+
+            // 2. Code blocks (``` ... ```)
+            html = html.replace(/```(\w*)\n([\s\S]*?)```/g, function(match, lang, code) {
+                return `<pre><code class="language-${lang}">${code.trim()}</code></pre>`;
+            });
+
+            // 3. Inline code (` ... `)
+            html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+
+            // 4. Headings
+            html = html.replace(/^###### (.*)/g, '<h6>$1</h6>');
+            html = html.replace(/^##### (.*)/g, '<h5>$1</h5>');
+            html = html.replace(/^#### (.*)/g, '<h4>$1</h4>');
+            html = html.replace(/^### (.*)/g, '<h3>$1</h3>');
+            html = html.replace(/^## (.*)/g, '<h2>$1</h2>');
+            html = html.replace(/^# (.*)/g, '<h1>$1</h1>');
+
+            // 5. Bold and Italic
+            html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+            html = html.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+
+            // 6. Blockquotes
+            html = html.replace(/^&gt; (.*)/g, '<blockquote>$1</blockquote>');
+
+            // 7. Lists
+            html = html.replace(/^\* (.*)/g, '<li>$1</li>');
+            html = html.replace(/^\d+\. (.*)/g, '<li>$1</li>');
+            
+            // Wrap consecutive list items in <ul> or <ol>
+            html = html.replace(/((?:^<li>.*<\/li>\n?)+)/g, '<ul>$1</ul>');
+
+            // 8. Links
+            html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank">$1</a>');
+
+            // 9. Images
+            html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" />');
+
+            // 10. Horizontal Rule
+            html = html.replace(/^---$/g, '<hr>');
+
+            // 11. Paragraphs (Basic: wrap lines that aren't already wrapped in HTML tags)
+            // Note: This is a simplified parser. For production, use a library like marked.js or showdown.
+            // But this keeps it self-contained.
+            html = html.split('\n\n').map(block => {
+                if (/^<(h\d|ul|ol|pre|blockquote|hr|li)/.test(block.trim())) {
+                    return block;
+                }
+                if (block.trim() === '') return '';
+                return `<p>${block.replace(/\n/g, '<br>')}</p>`;
+            }).join('\n');
+
+            return html;
+        }
+
+        // Update preview on input
+        editor.addEventListener('input', () => {
+            preview.innerHTML = markdownToHtml(editor.value);
+        });
+
+        // Initialize
+        preview.innerHTML = markdownToHtml(editor.value);
+
+        // Theme Toggle
+        themeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('dark-mode');
+        });
+
+        // Clear Button
+        clearBtn.addEventListener('click', () => {
+            if (confirm('Clear all text?')) {
+                editor.value = '';
+                preview.innerHTML = '';
+            }
+        });
+
+        // Auto-focus editor
+        editor.focus();
+    </script>
+</body>
+</html>
